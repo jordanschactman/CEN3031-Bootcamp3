@@ -25,7 +25,14 @@ var mongoose = require('mongoose'),
 exports.create = function(req, res) {
 
   /* Instantiate a Listing */
-  var listing = new Listing(req.body);
+  var listing = new Listing({
+    code: req.body.code,
+    name: req.body.name
+  });
+
+  if (req.body.address) {
+    listing.address = req.body.address;
+  }
 
   /* save the coordinates (located in req.results if there is an address property) */
   if(req.results) {
@@ -38,11 +45,9 @@ exports.create = function(req, res) {
   /* Then save the listing */
   listing.save(function(err) {
     if(err) {
-      console.log(err);
       res.status(400).send(err);
     } else {
       res.json(listing);
-      console.log(listing)
     }
   });
 };
@@ -58,10 +63,26 @@ exports.update = function(req, res) {
   var listing = req.listing;
 
   /* Replace the listings's properties with the new properties found in req.body */
+  listing.code = req.body.code;
+  listing.name = req.body.name;
  
   /*save the coordinates (located in req.results if there is an address property) */
+  if (req.body.address) {
+    listing.address = req.body.address;
+    listing.coordinates = {
+      latitude: req.results.lat,
+      longitude: req.results.lng
+    };
+  }
  
   /* Save the listing */
+  listing.save(function(err) {
+    if (err) {
+      res.status(400).send(err);
+    } else {
+      res.json(listing);
+    }
+  });
 
 };
 
@@ -70,12 +91,25 @@ exports.delete = function(req, res) {
   var listing = req.listing;
 
   /* Add your code to remove the listins */
-
+  Listing.findOneAndDelete({ code: listing.code }, function(err) {
+    if (err) {
+      res.status(400).send(err);
+    } else {
+      res.json(listing);
+    }
+  });
 };
 
 /* Retreive all the directory listings, sorted alphabetically by listing code */
 exports.list = function(req, res) {
   /* Add your code */
+  Listing.find().sort('code').exec(function(err, listings) {
+    if (err) {
+      res.status(400).send(err);
+    } else {
+      res.json(listings);
+    }
+  });
 };
 
 /* 
